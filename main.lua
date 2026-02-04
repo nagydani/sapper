@@ -99,17 +99,17 @@ function on_board(i, j)
 end
 
 function neighborhood_size(i, j)
-  local edge_cols = (i==0) or (i==COLS)
-  local edge_rows = (j==0) or (j==ROWS)
+  local edge_cols = (i == 0) or (i == COLS)
+  local edge_rows = (j == 0) or (j == ROWS)
   local size_cols = edge_cols and 2 or 3
   local size_rows = edge_rows and 2 or 3
-  return size_cols*size_rows
+  return size_cols * size_rows
 end
 
 function not_neighbor(row, col)
   return function(i, j)
-    local proximity = (i - row)^2 + (j - col)^2
-    return (proximity > 2)
+    local proximity = (i - row) ^ 2 + (j - col) ^ 2
+    return (2 < proximity)
   end
 end
 
@@ -117,12 +117,13 @@ function all_neighbors(i, j)
   local index = 0
   return function()
     index = index + 1
-    if index > 8 then
+    if 8 < index then
       return nil
     end
     return col_offset[index] + i, row_offset[index] + j
   end
-end
+
+    end
 
 function all_cells()
   local row, col = 1, 0
@@ -139,10 +140,12 @@ function all_cells()
   end
 end
 
--- NOTE: iterator must be declared upfront, for scope visibility
+-- NOTE: iterator must be declared upfront, for scope visibilit
+-- y
+
 function cell_filter(cells, filter)
   local iterator
-  iterator = function()
+  function iterator()
     local row, col = cells()
     if (nil == row) then
       return nil
@@ -154,7 +157,6 @@ function cell_filter(cells, filter)
   end
   return iterator
 end
-
 
 function mineable_positions(row, col)
   return cell_filter(all_cells(), not_neighbor(row, col))
@@ -181,9 +183,9 @@ function cell_is_flaggable(i, j)
 end
 
 function except_cell(i, j)
-  return function(col, row) 
-    local same_cell = (i==col) and (j==row) 
-    return not(same_cell)
+  return function(col, row)
+    local same_cell = (i == col) and (j == row)
+    return not (same_cell)
   end
 end
 
@@ -197,28 +199,28 @@ function count_mined_neighbors(row, col)
   return result
 end
 
-function all_mined_cells() 
-  return cell_filter(all_cells(), cell_is_mined )
+function all_mined_cells()
+  return cell_filter(all_cells(), cell_is_mined)
 end
 
 function cells_to_expose(i, j)
-  return cell_filter(all_mined_cells(), except_cell(i, j)) 
+  return cell_filter(all_mined_cells(), except_cell(i, j))
 end
 
 --- *** conversions between screen and field/cells ***
 
 function isPointInGameField(x, y)
-  local x_in_field = between(field_x, x, field_x + field_size )
-  local y_in_field = between(field_y, y, field_y + field_size )
+  local x_in_field = between(field_x, x, field_x + field_size)
+  local y_in_field = between(field_y, y, field_y + field_size)
   return (x_in_field and y_in_field)
 end
 
 function detectCellPosition(x, y)
-  if not isPointInGameField(x,y) then
+  if not isPointInGameField(x, y) then
     return nil, nil
-  end 
-  local i = math.ceil( (x - field_x) / CELL_SIZE )
-  local j = math.ceil( (y - field_y) / CELL_SIZE )
+  end
+  local i = math.ceil((x - field_x) / CELL_SIZE)
+  local j = math.ceil((y - field_y) / CELL_SIZE)
   if i == 0 then
     i = 1
   end
@@ -229,9 +231,9 @@ function detectCellPosition(x, y)
 end
 
 function getCellCoordinates(i, j)
-  local x = field_x + (i - 1)*CELL_SIZE
-  local y = field_y + (j - 1)*CELL_SIZE
-  return x, y 
+  local x = field_x + (i - 1) * CELL_SIZE
+  local y = field_y + (j - 1) * CELL_SIZE
+  return x, y
 end
 
 --- *** visualization: status panel *** 
@@ -253,19 +255,22 @@ function drawStatusPanel(hint, statistics)
   if statistics then
     gfx.setColor(COLORS.status)
     gfx.printf(statistics, 0, status_start, screen_w, "center")
-  end
+  
+      end
   if hint then
     gfx.setColor(COLORS.hint)
     gfx.printf(hint, 0, hint_start, screen_w, "center")
   end
-end
+
+    end
 
 function redrawStatus(status)
-  if status~="ready" then
+  if status ~= "ready" then
     counters.seconds = os.time() - state.started
     local statistics_line = getStatsLine()
-    drawStatusPanel(HINTS[status],  getStatsLine(counters) )
-  else
+    drawStatusPanel(HINTS[status], getStatsLine(counters))
+  
+      else
     drawStatusPanel(HINTS[status])
   end
 end
@@ -303,34 +308,34 @@ function drawCellLocked(i, j)
 end
 
 function drawCellFlagged(i, j)
-  local x,y = getCellCoordinates(i, j)
+  local x, y = getCellCoordinates(i, j)
   renderCellTile(x, y, COLORS.cell_bg_flagged)
-  renderCellText(x, y, COLORS.cell_fg_flagged, '?')
+  renderCellText(x, y, COLORS.cell_fg_flagged, "?")
 end
 
 function drawCellUnlocked(i, j, n)
-  local x,y = getCellCoordinates(i, j)
+  local x, y = getCellCoordinates(i, j)
   renderCellTile(x, y, COLORS.cell_bg_unlocked)
-  if n > 0 then
+  if 0 < n then
     local fgcolor = getMinesAroundColor(n)
-    renderCellText(x, y, fgcolor, ""..n)
+    renderCellText(x, y, fgcolor, "" .. n)
   end
 end
 
 function drawCellBlown(i, j)
-  local x,y = getCellCoordinates(i, j)
+  local x, y = getCellCoordinates(i, j)
   renderCellTile(x, y, COLORS.cell_bg_blown)
-  renderCellText(x, y, COLORS.cell_fg_mine, 'X')
+  renderCellText(x, y, COLORS.cell_fg_mine, "X")
 end
 
 function drawCellExposed(i, j, was_flagged)
-  local x,y = getCellCoordinates(i, j)
+  local x, y = getCellCoordinates(i, j)
   bgcolor = COLORS.cell_bg_locked
   if was_flagged then
     bgcolor = COLORS.cell_bg_flagged
   end
   renderCellTile(x, y, bgcolor)
-  renderCellText(x, y, COLORS.cell_fg_mine, '*')
+  renderCellText(x, y, COLORS.cell_fg_mine, "*")
 end
 
 function redraw()
@@ -342,7 +347,7 @@ function redraw()
       drawCellLocked(i, j)
     end
   end
-  redrawStatus('ready')
+  redrawStatus("ready")
 end
 
 --- *** flows: game rules and logic *** 
@@ -385,10 +390,11 @@ function flowPlaceMine(i, j)
 end
 
 -- [i,j] is the firt click index, guaranteed to be safe zone
+
 function flowMinesPlacement(i, j)
   math.randomseed(os.time())
-  local available_cells = COLS*ROWS - neighborhood_size(i, j)
-  local mines_to_place = N_MINES  
+  local available_cells = COLS * ROWS - neighborhood_size(i, j)
+  local mines_to_place = N_MINES
   for row, col in mineable_positions(i, j) do
     local p = mines_to_place / available_cells
     if math.random() < p then
@@ -407,11 +413,11 @@ function flowStart(i, j)
   counters.seconds = 0
   counters.unlocked = 0
   counters.flagged = 0
-  counters.unlockable = COLS*ROWS - N_MINES
+  counters.unlockable = COLS * ROWS - N_MINES
 end
 
 function flowToggleFlag(i, j)
-  local cell=grid[i][j]
+  local cell = grid[i][j]
   cell.flagged = not (cell.flagged)
   if cell.flagged then
     drawCellFlagged(i, j)
@@ -425,7 +431,7 @@ end
 
 function flowBlow(i, j)
   drawCellBlown(i, j)
-  for row, col in cells_to_expose(i,j) do
+  for row, col in cells_to_expose(i, j) do
     local cell = grid[row][col]
     drawCellExposed(row, col, cell.flagged)
   end
@@ -434,18 +440,17 @@ end
 function flowUnlock(i, j)
   if cell_is_mined(i, j) then
     flowBlow(i, j)
-    return 'lost'
+    return "lost"
   end
   local n_neighbors = count_mined_neighbors(i, j)
   drawCellUnlocked(i, j, n_neighbors)
   grid[i][j].unlocked = true
   counters.unlocked = counters.unlocked + 1
   if counters.unlockable == counters.unlocked then
-    return 'won'
+    return "won"
   end
-  return 'started'
+  return "started"
 end
-
 
 --- *** actions: interactive actions entry points ***
 
@@ -474,13 +479,13 @@ end
 function actionUser(name, x, y)
   local i, j = detectCellPosition(x, y)
   if not (i and j) then
-    return
+    return 
   end
-  if name=='flag' then
-    actionFlag(i,j)
+  if name == "flag" then
+    actionFlag(i, j)
   end
-  if name=='unlock' then
-    actionUnlock(i,j)
+  if name == "unlock" then
+    actionUnlock(i, j)
   end
 end
 
@@ -488,20 +493,20 @@ end
 
 function love.singleclick(x, y)
   if state.status == "started" then
-    actionUser('flag', x, y)
+    actionUser("flag", x, y)
   end
 end
 
 function love.doubleclick(x, y)
   local game_state = state.status
-  local game_over = (game_state=='won') or (game_state=='lost')
+  local game_over = (game_state == "won")
+       or (game_state == "lost")
   if game_over then
     actionInit()
   else
-    actionUser('unlock', x, y)
+    actionUser("unlock", x, y)
   end
 end
-
 
 flowInitGrid()
 actionInit()
