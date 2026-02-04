@@ -122,8 +122,7 @@ function all_neighbors(i, j)
     end
     return col_offset[index] + i, row_offset[index] + j
   end
-
-    end
+end
 
 function all_cells()
   local row, col = 1, 0
@@ -140,11 +139,7 @@ function all_cells()
   end
 end
 
--- NOTE: iterator must be declared upfront, for scope visibilit
--- y
-
 function cell_filter(cells, filter)
-  local iterator
   function iterator()
     local row, col = cells()
     if (nil == row) then
@@ -255,22 +250,19 @@ function drawStatusPanel(hint, statistics)
   if statistics then
     gfx.setColor(COLORS.status)
     gfx.printf(statistics, 0, status_start, screen_w, "center")
-  
-      end
+  end
   if hint then
     gfx.setColor(COLORS.hint)
     gfx.printf(hint, 0, hint_start, screen_w, "center")
   end
-
-    end
+end
 
 function redrawStatus(status)
   if status ~= "ready" then
     counters.seconds = os.time() - state.started
     local statistics_line = getStatsLine()
     drawStatusPanel(HINTS[status], getStatsLine(counters))
-  
-      else
+  else
     drawStatusPanel(HINTS[status])
   end
 end
@@ -498,9 +490,9 @@ function love.singleclick(x, y)
 end
 
 function love.doubleclick(x, y)
-  local game_state = state.status
-  local game_over = (game_state == "won")
-       or (game_state == "lost")
+  local game_won = (state.status == "won")
+  local game_lost = (state.status == "lost" )
+  local game_over = game_won or game_lost
   if game_over then
     actionInit()
   else
