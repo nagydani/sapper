@@ -413,11 +413,11 @@ function flowToggleFlag(i, j)
   cell.flagged = not (cell.flagged)
   if cell.flagged then
     drawCellFlagged(i, j)
+    counters.flagged = counters.flagged + 1
   else
     drawCellLocked(i, j)
+    counters.flagged = counters.flagged - 1
   end
-  local adjust = cell.flagged and 1 or -1
-  counters.flagged = counters.flagged + adjust
   redrawStatus(state.status)
 end
 
