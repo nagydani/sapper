@@ -491,7 +491,7 @@ end
 
 function love.doubleclick(x, y)
   local game_won = (state.status == "won")
-  local game_lost = (state.status == "lost" )
+  local game_lost = (state.status == "lost")
   local game_over = game_won or game_lost
   if game_over then
     actionInit()
