@@ -140,7 +140,8 @@ function all_cells()
 end
 
 function cell_filter(cells, filter)
-  function iterator()
+  local iterator
+  iterator = function()
     local row, col = cells()
     if (nil == row) then
       return nil
