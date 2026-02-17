@@ -141,7 +141,7 @@ end
 
 function cell_filter(cells, filter)
   local iterator
-  iterator = function()
+  function iterator()
     local row, col = cells()
     if (nil == row) then
       return nil
@@ -204,7 +204,7 @@ function cells_to_expose(i, j)
 end
 
 function unlockable_neighbors(i, j)
-  return cell_filter(neighbors(i,j), cell_is_unlockable)
+  return cell_filter(neighbors(i, j), cell_is_unlockable)
 end
 
 --- *** conversions between screen and field/cells ***
@@ -434,14 +434,14 @@ function flowBlow(i, j)
   end
 end
 
-function flowSafeUnlock(i,j)
+function flowSafeUnlock(i, j)
   local n_neighbors = count_mined_neighbors(i, j)
   drawCellUnlocked(i, j, n_neighbors)
   grid[i][j].unlocked = true
   counters.unlocked = counters.unlocked + 1
   if n_neighbors == 0 then
-    for row, col in unlockable_neighbors(i,j) do
-      flowSafeUnlock(row,col)
+    for row, col in unlockable_neighbors(i, j) do
+      flowSafeUnlock(row, col)
     end
   end
 end
@@ -451,7 +451,7 @@ function flowUnlock(i, j)
     flowBlow(i, j)
     return "lost"
   end
-  flowSafeUnlock(i,j)
+  flowSafeUnlock(i, j)
   if counters.unlockable == counters.unlocked then
     return "won"
   end
