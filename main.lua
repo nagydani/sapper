@@ -1,9 +1,17 @@
-COLS = 9
-ROWS = 9
-N_MINES = 12
+DEFAULT_COLS = 9
+DEFAULT_ROWS = 9
+DEFAULT_MINES = 12
+
+MIDDLE_COLS = 16
+MIDDLE_ROWS = 16
+MINES_PERCENT = 15
+
+-- N_MINES = 12
 CELL_SIZE = 32
 CELL_FONT_SIZE = 28
 STATUS_FONT_SIZE = 24
+
+SCREEN_VPAD = 0.1
 
 COLORS = { }
 COLORS.background = Color[Color.black]
@@ -26,10 +34,9 @@ COLORS.cell_fg_unlocked_2 = Color[Color.black]
 COLORS.cell_fg_unlocked_3 = Color[Color.magenta]
 COLORS.cell_fg_unlocked_4 = Color[Color.red]
 
-SCREEN_VPAD = 0.1
 
 HINTS = {
-  ready = "Double-click to start",
+  ready = "Double-click to start, click to switch mode",
   started = "Click to flag, double-click to open",
   won = "WIN!!! (double-click to restart)",
   lost = "Loss... (double-click to restart)"
@@ -63,9 +70,10 @@ status_h = lower_edge - status_y
 
 -- geometry and coordinates of gamefield
 
-field_size = COLS * CELL_SIZE
-field_x = (screen_w - field_size) / 2
-field_y = ((status_start - status_padding) - field_size) / 2
+max_field_width = screen_w 
+max_field_height = status_y
+max_cols = math.floor( max_field_width / CELL_SIZE )
+max_rows = math.floor( max_field_height / CELL_SIZE )
 
 -- helper matrix: neighbour offsets
 
@@ -83,10 +91,40 @@ end
 
 --- *** runtime variables *** 
 
+mode_idx = 1
+modes = { }
+config = { }
 state = { }
 grid = { }
 counters = { }
 mines = { }
+
+function game_mode( cols, rows, mines )
+  local n_cols = math.min( cols, max_cols )
+  local n_rows = math.min( rows, max_rows )
+  local n_cells = n_cols*n_rows
+  local max_mines = math.floor( n_cells * MINES_PERCENT / 100 )
+  local n_mines = max_mines
+  if mines then
+    n_mines = math.min( mines, max_mines )
+  end 
+  return n_cols, n_rows, n_mines
+end
+
+function add_game_mode( cols, rows, mines )
+  local n_cols, n_rows, n_mines = game_mode(cols, rows, mines) 
+  table.insert(modes, {
+    n_cols, 
+    n_rows, 
+    n_mines
+  })
+end
+
+function initModes()
+  add_game_mode( DEFAULT_COLS, DEFAULT_ROWS, DEFAULT_MINES )
+  add_game_mode( MIDDLE_COLS, MIDDLE_ROWS )
+  add_game_mode( max_cols, max_rows )
+end
 
 --- *** helper functions: cells manipulation  ***
 
@@ -95,12 +133,14 @@ function between(low, mid, high)
 end
 
 function on_board(i, j)
-  return between(1, i, ROWS) and between(1, j, COLS)
+  local cols = config.cols
+  local rows = config.rows
+  return between(1, i, rows) and between(1, j, cols)
 end
 
 function neighborhood_size(i, j)
-  local edge_cols = (i == 0) or (i == COLS)
-  local edge_rows = (j == 0) or (j == ROWS)
+  local edge_cols = (i == 0) or (i == config.cols)
+  local edge_rows = (j == 0) or (j == config.rows)
   local size_cols = edge_cols and 2 or 3
   local size_rows = edge_rows and 2 or 3
   return size_cols * size_rows
@@ -128,10 +168,10 @@ function all_cells()
   local row, col = 1, 0
   return function()
     col = col + 1
-    if COLS < col then
+    if config.cols < col then
       col = 1
       row = row + 1
-      if ROWS < row then
+      if config.rows < row then
         return nil
       end
     end
@@ -210,8 +250,12 @@ end
 --- *** conversions between screen and field/cells ***
 
 function isPointInGameField(x, y)
-  local x_in_field = between(field_x, x, field_x + field_size)
-  local y_in_field = between(field_y, y, field_y + field_size)
+  local x_min = config.field_x
+  local x_max = config.field_x_max
+  local y_min = config.field_y
+  local y_max = config.field_y_max
+  local x_in_field = between(x_min, x, x_max)
+  local y_in_field = between(y_min, y, y_max)
   return (x_in_field and y_in_field)
 end
 
@@ -219,8 +263,8 @@ function detectCellPosition(x, y)
   if not isPointInGameField(x, y) then
     return nil, nil
   end
-  local i = math.ceil((x - field_x) / CELL_SIZE)
-  local j = math.ceil((y - field_y) / CELL_SIZE)
+  local i = math.ceil((x - config.field_x) / CELL_SIZE)
+  local j = math.ceil((y - config.field_y) / CELL_SIZE)
   if i == 0 then
     i = 1
   end
@@ -231,8 +275,8 @@ function detectCellPosition(x, y)
 end
 
 function getCellCoordinates(i, j)
-  local x = field_x + (i - 1) * CELL_SIZE
-  local y = field_y + (j - 1) * CELL_SIZE
+  local x = config.field_x + (i - 1) * CELL_SIZE
+  local y = config.field_y + (j - 1) * CELL_SIZE
   return x, y
 end
 
@@ -246,6 +290,13 @@ function getStatsLine()
   local s = counters.seconds
   local template = "Flags: %s/%s | Open: %s/%s | Sec: %s"
   return fmt(template, f, t, r, p, s)
+end
+
+function getModeLine()
+  local c = config.cols
+  local r = config.rows
+  local m = config.mines
+  return fmt("Mode: %s x %s (%s mines)", c, r, m)
 end
 
 function drawStatusPanel(hint, statistics)
@@ -263,13 +314,13 @@ function drawStatusPanel(hint, statistics)
 end
 
 function redrawStatus(status)
+  local statusLineBuilder = getModeLine
   if status ~= "ready" then
     counters.seconds = os.time() - state.started
-    local statistics_line = getStatsLine()
-    drawStatusPanel(HINTS[status], getStatsLine(counters))
-  else
-    drawStatusPanel(HINTS[status])
+    statusLineBuilder = getStatsLine
   end
+  local statusLine = statusLineBuilder()
+  drawStatusPanel(HINTS[status], statusLine)
 end
 
 --- *** visualization: game field *** 
@@ -339,8 +390,8 @@ function redraw()
   gfx.setColor(COLORS.background)
   gfx.rectangle("fill", 0, 0, screen_w, screen_h)
   gfx.setFont(fonts.cell)
-  for i = 1, COLS do
-    for j = 1, ROWS do
+  for i = 1, config.cols do
+    for j = 1, config.rows do
       drawCellLocked(i, j)
     end
   end
@@ -349,18 +400,33 @@ end
 
 --- *** flows: game rules and logic *** 
 
+function flowInitConfig(mode)
+  local cols, rows, n_mines = unpack(mode)
+  config.cols = cols
+  config.rows = rows
+  config.cells = cols * rows
+  config.mines = n_mines
+  config.field_w = cols * CELL_SIZE
+  config.field_h = rows * CELL_SIZE
+  config.field_x = (max_field_width - config.field_w) / 2
+  config.field_y = (max_field_height - config.field_h) / 2
+  config.field_x_max = config.field_x + config.field_w
+  config.field_y_max = config.field_y + config.field_h
+end
+
+
 function flowInitGrid()
-  for i = 1, COLS do
+  for i = 1, max_cols do
     grid[i] = { }
-    for j = 1, ROWS do
+    for j = 1, max_rows do
       grid[i][j] = { }
     end
   end
 end
 
 function flowResetCells()
-  for i = 1, COLS do
-    for j = 1, ROWS do
+  for i = 1, config.cols do
+    for j = 1, config.rows do
       local cell = grid[i][j]
       cell.mine = false
       cell.flagged = false
@@ -390,15 +456,15 @@ end
 
 function flowMinesPlacement(i, j)
   math.randomseed(os.time())
-  local available_cells = COLS * ROWS - neighborhood_size(i, j)
-  local mines_to_place = N_MINES
+  local mineable_cells = config.cells - neighborhood_size(i, j)
+  local mines_to_place = config.mines
   for row, col in mineable_positions(i, j) do
-    local p = mines_to_place / available_cells
+    local p = mines_to_place / mineable_cells
     if math.random() < p then
       flowPlaceMine(row, col)
       mines_to_place = mines_to_place - 1
     end
-    available_cells = available_cells - 1
+    mineable_cells = mineable_cells - 1
   end
 end
 
@@ -410,7 +476,7 @@ function flowStart(i, j)
   counters.seconds = 0
   counters.unlocked = 0
   counters.flagged = 0
-  counters.unlockable = COLS * ROWS - N_MINES
+  counters.unlockable = config.cells - counters.mines
 end
 
 function flowToggleFlag(i, j)
@@ -465,6 +531,16 @@ function actionInit()
   redraw()
 end
 
+function actionNextMode()
+  if mode_idx == #modes then
+    mode_idx = 1
+  else
+    mode_idx = mode_idx + 1 
+  end
+  flowInitConfig( modes[mode_idx] )
+  actionInit()
+end
+
 function actionFlag(i, j)
   if cell_is_flaggable(i, j) then
     flowToggleFlag(i, j)
@@ -482,24 +558,21 @@ function actionUnlock(i, j)
   end
 end
 
-function actionUser(name, x, y)
+function actionUser(action_func, x, y)
   local i, j = detectCellPosition(x, y)
   if not (i and j) then
     return 
   end
-  if name == "flag" then
-    actionFlag(i, j)
-  end
-  if name == "unlock" then
-    actionUnlock(i, j)
-  end
+  action_func(i, j)
 end
 
 --- *** event handlers and initialization ***
 
 function love.singleclick(x, y)
   if state.status == "started" then
-    actionUser("flag", x, y)
+    actionUser(actionFlag, x, y)
+  elseif state.status == "ready" then
+    actionNextMode()
   end
 end
 
@@ -510,9 +583,11 @@ function love.doubleclick(x, y)
   if game_over then
     actionInit()
   else
-    actionUser("unlock", x, y)
+    actionUser(actionUnlock, x, y)
   end
 end
 
+initModes()
+flowInitConfig( modes[1] )
 flowInitGrid()
 actionInit()
