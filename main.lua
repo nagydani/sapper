@@ -7,7 +7,7 @@ MIDDLE_ROWS = 16
 MINES_PERCENT = 15
 
 CELL_SIZE = 32
-CELL_FONT_SIZE = 28
+CELL_FONT_SIZE = 26
 STATUS_FONT_SIZE = 24
 
 SCREEN_VPAD = 0.1
@@ -108,8 +108,8 @@ fonts = {
 
 -- for cell we use glyph height, not font line height
 
-cell_fh = CELL_FONT_SIZE
-status_fh = font.getHeight(fonts.status)
+cell_fh = fonts.cell:getHeight()
+status_fh = fonts.status:getHeight()
 
 -- geometry and coordinates of status panel
 
@@ -428,7 +428,7 @@ end
 function renderCellText(x, y, fgcolor, txt)
   gfx.setColor(fgcolor)
   local text_y = y + CELL_SIZE * 0.5 - cell_fh * 0.5
-  gfx.printf(txt, x, y, CELL_SIZE, "center")
+  gfx.printf(txt, x, text_y, CELL_SIZE, "center")
 end
 
 function getMinesAroundColor(n_mines_nearby)
