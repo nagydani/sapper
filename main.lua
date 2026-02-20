@@ -414,9 +414,9 @@ function drawMine(x, y)
 end
 
 function drawFlag(x, y)
-  local cx, cy = x+CELL_SIZE/2, y+CELL_SIZE/2
-  local left, right = mine_canvas_range(cx, 0.3*CELL_SIZE)
-  local top, bottom = mine_canvas_range(cy, 0.25*CELL_SIZE)
+  local cx, cy = x + CELL_SIZE / 2, y + CELL_SIZE / 2
+  local left, right = mine_canvas_range(cx, 0.3 * CELL_SIZE)
+  local top, bottom = mine_canvas_range(cy, 0.25 * CELL_SIZE)
   local flag_h = 0.3 * CELL_SIZE
   local bisect = top + flag_h / 2
   local low = top + flag_h
