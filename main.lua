@@ -151,6 +151,20 @@ grid = { }
 counters = { }
 mines = { }
 
+function game_over()
+  local game_won = (state.status == "won")
+  local game_lost = (state.status == "lost")
+  return (game_won or game_lost)
+end
+
+function game_started()
+  return state.status == "started"
+end
+
+function game_ready()
+  return state.status == "ready"
+end
+
 function game_mode(cols, rows, mines)
   local n_cols = math.min(cols, max_cols)
   local n_rows = math.min(rows, max_rows)
@@ -367,7 +381,7 @@ end
 
 function redrawStatus(status)
   local statusLineBuilder = getModeLine
-  if status ~= "ready" then
+  if not (game_ready()) then
     counters.seconds = os.time() - state.started
     statusLineBuilder = getStatsLine
   end
@@ -640,7 +654,7 @@ function actionFlag(i, j)
 end
 
 function actionUnlock(i, j)
-  if (state.status == "ready") then
+  if game_ready() then
     flowStart(i, j)
   end
   if cell_is_unlockable(i, j) then
@@ -661,18 +675,15 @@ end
 --- *** event handlers and initialization ***
 
 function love.singleclick(x, y)
-  if state.status == "started" then
-    actionUser(actionFlag, x, y)
-  elseif state.status == "ready" then
+  if game_ready() then
     actionNextMode()
+  elseif game_started() then
+    actionUser(actionFlag, x, y)
   end
 end
 
 function love.doubleclick(x, y)
-  local game_won = (state.status == "won")
-  local game_lost = (state.status == "lost")
-  local game_over = game_won or game_lost
-  if game_over then
+  if game_over() then
     actionInit()
   else
     actionUser(actionUnlock, x, y)
