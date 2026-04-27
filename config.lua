@@ -90,9 +90,9 @@ COLORS.cell_fg_unlocked[5] = {
 }
 
 HINTS = {
-  ready = "Double-click to start, click to switch mode",
-  started = "Click to flag, double-click to open",
-  won = "WIN!!! (double-click to restart)",
-  lost = "Loss... (double-click to restart)"
+  ready = "двойной клик — старт, один клик — сложность",
+  started = "клик — отметить, двойной клик — открыть",
+  won = "Победа!!! (двойной клик для перезапуска)",
+  lost = "Увы... (двойной клик для перезаписка)"
 }
 

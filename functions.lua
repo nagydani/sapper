@@ -191,7 +191,7 @@ function getStatsLine()
   local f = counters.flagged
   local t = counters.mines
   local s = counters.seconds
-  local template = "Flags: %s/%s | Open: %s/%s | Sec: %s"
+  local template = "Отмечено: %s/%s | Открыто: %s/%s | Сек.: %s"
   return fmt(template, f, t, r, p, s)
 end
 
@@ -199,7 +199,7 @@ function getModeLine()
   local c = config.cols
   local r = config.rows
   local m = config.mines
-  return fmt("Mode: %s x %s (%s mines)", c, r, m)
+  return fmt("Сложность: %s x %s (%s мин)", c, r, m)
 end
 
 function drawStatusPanel(hint, statistics)

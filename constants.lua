@@ -8,7 +8,10 @@ gfx = love.graphics
 screen_w, screen_h = gfx.getDimensions()
 
 fonts = {
-  status = gfx.newFont(STATUS_FONT_SIZE),
+  status = gfx.newFont(
+    "assets/fonts/ubuntu_mono_bold_nerd.ttf",
+    STATUS_FONT_SIZE
+  ),
   cell = gfx.newFont(CELL_FONT_SIZE)
 }
 
